@@ -46,7 +46,7 @@ var rootCmd = &cobra.Command{
 	Use:     "ssosync",
 	Short:   "SSO Sync, making AWS SSO be populated automagically",
 	Long: `A command line tool to enable you to synchronise your Google
-Apps (G-Suite) users to AWS Single Sign-on (AWS SSO)
+Apps (Google Workspace) users to AWS Single Sign-on (AWS SSO)
 Complete documentation is available at https://github.com/awslabs/ssosync`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx, cancel := context.WithCancel(context.Background())
@@ -161,7 +161,7 @@ func configLambda() {
 }
 
 func addFlags(cmd *cobra.Command, cfg *config.Config) {
-	rootCmd.PersistentFlags().StringVarP(&cfg.GoogleCredentials, "google-admin", "a", config.DefaultGoogleCredentials, "path to find credentials file for Google")
+	rootCmd.PersistentFlags().StringVarP(&cfg.GoogleCredentials, "google-admin", "a", config.DefaultGoogleCredentials, "path to find credentials file for Google Workspace")
 	rootCmd.PersistentFlags().BoolVarP(&cfg.Debug, "debug", "d", config.DefaultDebug, "enable verbose / debug logging")
 	rootCmd.PersistentFlags().StringVarP(&cfg.LogFormat, "log-format", "", config.DefaultLogFormat, "log format")
 	rootCmd.PersistentFlags().StringVarP(&cfg.LogLevel, "log-level", "", config.DefaultLogLevel, "log level")
