@@ -19,9 +19,9 @@ import (
 	"context"
 	"io/ioutil"
 
-	"github.com/awslabs/ssosync/internal/aws"
-	"github.com/awslabs/ssosync/internal/config"
-	"github.com/awslabs/ssosync/internal/google"
+	"github.com/bilenkonito/ssosync/internal/aws"
+	"github.com/bilenkonito/ssosync/internal/config"
+	"github.com/bilenkonito/ssosync/internal/google"
 	"github.com/hashicorp/go-retryablehttp"
 
 	log "github.com/sirupsen/logrus"
@@ -65,7 +65,6 @@ func New(cfg *config.Config, a aws.Client, g google.Client) SyncGSuite {
 //  EmploymentData.projects:'GeneGnomes'
 func (s *syncGSuite) SyncUsers(p google.QueryParams) error {
 	log.Debug("get deleted users")
-	//deletedUsers, err := s.google.GetDeletedUsers()
 	deletedUsers, err := s.google.Users().Deleted(google.DeletedParams{
 		Customer: p.Customer,
 		Domain: p.Domain,
@@ -104,7 +103,6 @@ func (s *syncGSuite) SyncUsers(p google.QueryParams) error {
 	}
 
 	log.Debug("get active google users")
-	//googleUsers, err := s.google.GetUsers(query)
 	googleUsers, err := s.google.Users().Query(p)
 	if err != nil {
 		return err
@@ -168,7 +166,6 @@ func (s *syncGSuite) SyncUsers(p google.QueryParams) error {
 //  email:aws-*
 func (s *syncGSuite) SyncGroups(p google.QueryParams) error {
 	log.WithField("query", p.Query).Debug("get google groups")
-	//googleGroups, err := s.google.GetGroups(query)
 	googleGroups, err := s.google.Groups().Query(p)
 	if err != nil {
 		return err
@@ -207,7 +204,6 @@ func (s *syncGSuite) SyncGroups(p google.QueryParams) error {
 			group = newGroup
 		}
 
-		//groupMembers, err := s.google.GetGroupMembers(g)
 		groupMembers, err := s.google.Groups().Members(google.GroupMembersParams{
 			Parent: g,
 		})
@@ -275,7 +271,6 @@ func (s *syncGSuite) SyncGroups(p google.QueryParams) error {
 //  6) delete groups in aws, these were deleted in google
 func (s *syncGSuite) SyncGroupsUsers(p google.QueryParams) error {
 	log.WithField("query", p.Query).Debug("get google groups")
-	//googleGroups, err := s.google.GetGroups(query)
 	googleGroups, err := s.google.Groups().Query(p)
 	if err != nil {
 		return err
@@ -462,7 +457,6 @@ func (s *syncGSuite) getGoogleGroupsAndUsers(googleGroups []*google.Group) ([]*g
 		l := log.WithFields(log.Fields{"group": g.Name})
 
 		l.Debug("get group members from google")
-		//groupMembers, err := s.google.GetGroupMembers(g)
 		groupMembers, err := s.google.Groups().Members(google.GroupMembersParams{
 			Parent: g,
 		})
@@ -480,7 +474,6 @@ func (s *syncGSuite) getGoogleGroupsAndUsers(googleGroups []*google.Group) ([]*g
 			}
 
 			l.WithField("id", m.Email).Debug("get user")
-			//u, err := s.google.GetUser(m.Email)
 			u, err := s.google.Users().Get(google.GetParams{
 				Id: m.Email,
 			})

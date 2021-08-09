@@ -17,12 +17,12 @@ package internal
 
 import (
 	"encoding/json"
-	"github.com/awslabs/ssosync/internal/google"
+	"github.com/bilenkonito/ssosync/internal/google"
 	"log"
 	"reflect"
 	"testing"
 
-	"github.com/awslabs/ssosync/internal/aws"
+	"github.com/bilenkonito/ssosync/internal/aws"
 )
 
 // toJSON return a json pretty of the stc

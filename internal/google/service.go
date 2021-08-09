@@ -26,7 +26,7 @@ func (r *usersService) Get(p GetParams) (*User, error) {
 	}
 
 	ret, err := r.usersService.Get(p.Id).Do()
-	return (*User)(ret), err
+	return ret, err
 }
 
 func (r *usersService) Query(p QueryParams) ([]*User, error) {
@@ -49,7 +49,7 @@ func (r *usersService) Query(p QueryParams) ([]*User, error) {
 	ret := make([]*User, 0)
 	err = c.Query(p.Query).Pages(r.ctx, func(users *admin.Users) error {
 		for _, user := range users.Users {
-			ret = append(ret, (*User)(user))
+			ret = append(ret, user)
 		}
 		return nil
 	})
@@ -90,7 +90,7 @@ func (r *groupsService) Get(p GetParams) (*Group, error) {
 	}
 
 	ret, err := r.groupsService.Get(p.Id).Do()
-	return (*Group)(ret), err
+	return ret, err
 }
 
 func (r *groupsService) Query(p QueryParams) ([]*Group, error) {
@@ -113,7 +113,7 @@ func (r *groupsService) Query(p QueryParams) ([]*Group, error) {
 	ret := make([]*Group, 0)
 	err = c.Query(p.Query).Pages(r.ctx, func(groups *admin.Groups) error {
 		for _, group := range groups.Groups {
-			ret = append(ret, (*Group)(group))
+			ret = append(ret, group)
 		}
 		return nil
 	})
@@ -135,7 +135,7 @@ func (r *groupsService) Members(p GroupMembersParams) ([]*Member, error) {
 	ret := make([]*Member, 0)
 	err = r.membersService.List(id).Pages(r.ctx, func(members *admin.Members) error {
 		for _, member := range members.Members {
-			ret = append(ret, (*Member)(member))
+			ret = append(ret, member)
 		}
 		return nil
 	})
