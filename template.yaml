@@ -1,130 +1,181 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Transform: AWS::Serverless-2016-10-31
+Transform: "AWS::Serverless-2016-10-31"
 
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
-          default: "General"
+          default: "Google"
         Parameters:
-          - GoogleCredentials
-          - GoogleAdminEmail
-          - SCIMEndpointUrl
-          - SCIMEndpointAccessToken
+          - "GoogleAdminEmail"
+          - "GoogleCredentials"
+          - "GoogleIgnoreUsers"
+          - "GoogleIgnoreGroups"
+          - "GoogleMatchUsers"
+          - "GoogleMatchGroups"
+          - "SyncMethod"
       - Label:
-          default: "Advanced Configuration"
+          default: "SCIM"
         Parameters:
-          - SyncMethod
-          - GoogleUserMatch
-          - GoogleGroupMatch
-          - LogLevel
-          - LogFormat
-          - ScheduleExpression
+          - "SCIMEndpointUrl"
+          - "SCIMEndpointAccessToken"
+      - Label:
+          default: "Schedule"
+        Parameters:
+          - "ScheduleExpression"
+      - Label:
+          default: "Logging"
+        Parameters:
+          - "LogLevel"
+          - "LogFormat"
 
   AWS::ServerlessRepo::Application:
-    Name: ssosync
-    Description: Helping you populate AWS SSO directly with your Google Apps users.
-    Author: Sebastian Doell
-    SpdxLicenseId: Apache-2.0
+    Name: "ssosync"
+    Description: "Helping you populate AWS SSO directly with your Google Apps users."
+    Author: "Sebastian Doell"
+    SpdxLicenseId: "Apache-2.0"
     # paths are relative to .aws-sam/build directory
-    LicenseUrl: LICENSE
-    ReadmeUrl: SAR.md
-    Labels: [serverless, sso, lambda, scim]
-    HomePageUrl: https://github.com/awslabs/ssosync
+    LicenseUrl: "LICENSE"
+    ReadmeUrl: "SAR.md"
+    Labels: [
+        "serverless",
+        "sso",
+        "lambda",
+        "scim"
+    ]
+    HomePageUrl: "https://github.com/awslabs/ssosync"
     # Update the semantic version and run sam publish to publish a new version of your app
-    SemanticVersion: 1.0.0-rc.8
+    SemanticVersion: "1.0.0-rc.9"
     # best practice is to use git tags for each release and link to the version tag as your source code URL
-    SourceCodeUrl: https://github.com/awslabs/ssosync/tree/1.0.0-rc.8
+    SourceCodeUrl: "https://github.com/awslabs/ssosync/tree/1.0.0-rc.9"
 
 Parameters:
-  ScheduleExpression:
-    Type: String
-    Description: Schedule for trigger the execution of ssosync (see CloudWatch schedule expressions)
-    Default: rate(15 minutes)
-  LogLevel:
-    Type: String
-    Description: Log level for Lambda function logging
-    Default: warn
-    AllowedValues:
-      - panic
-      - fatal
-      - error
-      - warn
-      - info
-      - debug
-      - trace
-  LogFormat:
-    Type: String
-    Description: Log format for Lambda function logging
-    Default: json
-    AllowedValues:
-      - json
-      - text
-  GoogleCredentials:
-    Type: String
-    Description: Credentials to log into Google (content of credentials.json)
-    NoEcho: true
   GoogleAdminEmail:
-    Type: String
-    Description: Google Admin email
+    Type: "String"
+    Default: "admin@example.com"
+    AllowedPattern: "^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*)@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])$"
+    ConstraintDescription: "must be a valid email"
+    Description: "Google admin user email"
     NoEcho: true
+  GoogleCredentials:
+    Type: "String"
+    Default: "{\"type\": \"service_account\", \"project_id\": \"REPLACEME\", \"private_key_id\": \"REPLACEME\", \"private_key\": \"REPLACEME\", \"client_email\": \"REPLACEME\", \"client_id\": \"REPLACEME\", \"auth_uri\": \"REPLACEME\", \"token_uri\": \"REPLACEME\", \"auth_provider_x509_cert_url\": \"REPLACEME\", \"client_x509_cert_url\": \"REPLACEME\"}"
+    AllowedPattern: "^[{]\\s*(?:[\\\"](?:type|project_id|private_key_id|private_key|client_email|client_id|auth_uri|token_uri|auth_provider_x509_cert_url|client_x509_cert_url)[\\\"]\\s*\\:\\s*[\\\"][^\\\"]+[\\\"]\\s*(?:[,]\\s*|[}]\\s*$))+(?<![,][}])$"
+    ConstraintDescription: "must be a Google service account credentials JSON object"
+    Description: "Google service account credentials"
+    NoEcho: true
+  GoogleCustomer:
+    Type: "String"
+    Default: "my_customer"
+    Description: "Google customer"
+  GoogleDomain:
+    Type: "String"
+    Description: "Google domain"
   SCIMEndpointUrl:
-    Type: String
-    Description: AWS SSO SCIM Endpoint Url
+    Type: "String"
+    Default: "https://scim.eu-north-1.amazonaws.com/1223456789ab-1234-1234-1234-1223456789abc/scim/v2/"
+    AllowedPattern: "^(?:[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\:/{2})?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&//=]*)$"
+    ConstraintDescription: "must be a valid url"
+    Description: "AWS SSO SCIM endpoint url"
     NoEcho: true
   SCIMEndpointAccessToken:
-    Type: String
-    Description: AWS SSO SCIM AccessToken
+    Type: "String"
+    Description: "AWS SSO SCIM AccessToken"
     NoEcho: true
-  GoogleUserMatch:
-    Type: String
-    Description: |
-      Google user query parameter, example: 'name:John* email:admin*', see: https://developers.google.com/admin-sdk/directory/v1/guides/search-users
-  GoogleGroupMatch:
-    Type: String
-    Description: |
-      Google group query parameter, example: 'name:Admin* email:aws-*', see: https://developers.google.com/admin-sdk/directory/v1/guides/search-groups
+  GoogleIgnoreUsers:
+    Type: "String"
+    Default: "user1@example.com,user2@example.com"
+    AllowedPattern: "^(?:(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*)@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])(?:[,]|$))*(?<!,)$"
+    ConstraintDescription: "must be a valid comma delimited list of emails"
+    Description: "Ignored Google users"
+  GoogleIgnoreGroups:
+    Type: "String"
+    Default: "group1@example.com,group2@example.com"
+    AllowedPattern: "^(?:(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*)@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])(?:[,]|$))*(?<!,)$"
+    ConstraintDescription: "must be a valid comma delimited list of emails"
+    Description: "Ignored Google groups"
+  GoogleMatchUsers:
+    Type: "String"
+    Default: "name:John* email:admin*"
+    AllowedPattern: "^(?:(?:(?:name|email|givenName|familyName|im|externalId|manager|managerId|directManager|directManagerId|address|addressPoBox|addressExtended|addressStreet|addressLocality|addressRegion|addressPostalCode|addressCountry|orgName|orgTitle|orgDepartment|orgDescription|orgCostCenter|phone|orgUnitPath)(?:[:][^\\r\\n\\t\\f\\v ]+|[=][^\\r\\n\\t\\f\\v *]+)|(?:isAdmin|isDelegatedAdmin|isSuspended|isEnrolledIn2Sv|isEnforcedIn2Sv)[=](?:true|false)|(?:[^\\r\\n\\t\\f\\v ]+(?<!\\.)(?:[:][^\\r\\n\\t\\f\\v ]+|[=][^\\r\\n\\t\\f\\v *]+)))(?:[ ]|$))*(?<![ ])$"
+    ConstraintDescription: "must be a valid Google Workspace directory user search expression"
+    Description: "Matched Google users, see: https://developers.google.com/admin-sdk/directory/v1/guides/search-users"
+  GoogleMatchGroups:
+    Type: "String"
+    Default: "name:Admin* email:aws-*"
+    AllowedPattern: "^(?:(?:name|email|memberKey)(?:[:][^\\r\\n\\t\\f\\v ]+|[=][^\\r\\n\\t\\f\\v *]+)(?:[ ]|$))*(?<![ ])$"
+    ConstraintDescription: "must be a valid Google Workspace directory group search expression"
+    Description: "Matched Google groups, see: https://developers.google.com/admin-sdk/directory/v1/guides/search-groups"
   SyncMethod:
-    Type: String
-    Description: Sync method to use
-    Default: groups
+    Type: "String"
+    Default: "groups"
     AllowedValues:
-      - groups
-      - users_groups
+      - "users_groups"
+      - "groups"
+    Description: "Sync method"
+  ScheduleExpression:
+    Type: "String"
+    Default: "rate(1 day)"
+    AllowedPattern: "^(?:rate\\([0-9]*[ ](?:minute|minutes|hour|hours|day|days)\\)$)|(?:cron\\([0-9,\\-*?/LW#][ ][0-9,\\-*?/LW#][ ][0-9,\\-*?/LW#][ ][0-9,\\-*?/LW#][ ][0-9,\\-*?/LW#]\\))$"
+    ConstraintDescription: "must be a valid CloudWatch scheduled event expression"
+    Description: "Lambda execution schedule expreession, see: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html"
+  LogLevel:
+    Type: "String"
+    Default: "info"
+    AllowedValues:
+      - "trace"
+      - "debug"
+      - "info"
+      - "warn"
+      - "error"
+      - "fatal"
+      - "panic"
+    Description: "Lambda function logging level"
+  LogFormat:
+    Type: "String"
+    Default: "json"
+    AllowedValues:
+      - "json"
+      - "text"
+    Description: "Lambda function logging format"
 
 Resources:
   SSOSyncFunction:
-    Type: AWS::Serverless::Function
+    Type: "AWS::Serverless::Function"
     Properties:
-      Runtime: go1.x
-      Handler: dist/ssosync_linux_amd64/ssosync
+      Runtime: "go1.x"
+      Handler: "dist/ssosync_linux_amd64/ssosync"
       Timeout: 300
       Environment:
         Variables:
-          SSOSYNC_LOG_LEVEL: !Ref LogLevel
-          SSOSYNC_LOG_FORMAT: !Ref LogFormat
+          SSOSYNC_GOOGLE_ADMIN: !Ref AWSGoogleAdminEmail
           SSOSYNC_GOOGLE_CREDENTIALS: !Ref AWSGoogleCredentialsSecret
-          SSOSYNC_GOOGLE_ADMIN: !Ref AWSGoogleAdminEamil
+          SSOSYNC_GOOGLE_CUSTOMER: !Ref GoogleCustomer
+          SSOSYNC_GOOGLE_DOMAIN: !Ref GoogleDomain
           SSOSYNC_SCIM_ENDPOINT: !Ref AWSSCIMEndpointSecret
           SSOSYNC_SCIM_ACCESS_TOKEN: !Ref AWSSCIMAccessTokenSecret
-          SSOSYNC_USER_MATCH: !Ref GoogleUserMatch
-          SSOSYNC_GROUP_MATCH: !Ref GoogleGroupMatch
+          SSOSYNC_IGNORE_USERS: !Ref GoogleIgnoreUsers
+          SSOSYNC_IGNORE_GROUPS: !Ref GoogleIgnoreGroups
+          SSOSYNC_USER_MATCH: !Ref GoogleMatchUsers
+          SSOSYNC_GROUP_MATCH: !Ref GoogleMatchGroups
           SSOSYNC_SYNC_METHOD: !Ref SyncMethod
+          SSOSYNC_LOG_LEVEL: !Ref LogLevel
+          SSOSYNC_LOG_FORMAT: !Ref LogFormat
       Policies:
         - Statement:
-            - Sid: SSMGetParameterPolicy
-              Effect: Allow
+            - Sid: "SSMGetParameterPolicy"
+              Effect: "Allow"
               Action:
                 - "secretsmanager:Get*"
               Resource:
+                - !Ref AWSGoogleAdminEmail
                 - !Ref AWSGoogleCredentialsSecret
-                - !Ref AWSGoogleAdminEamil
                 - !Ref AWSSCIMEndpointSecret
                 - !Ref AWSSCIMAccessTokenSecret
       Events:
         SyncScheduledEvent:
-          Type: Schedule
-          Name: AWSSyncSchedule
+          Type: "Schedule"
+          Name: "AWSSyncSchedule"
           Properties:
             Enabled: true
             Schedule: !Ref ScheduleExpression
@@ -132,23 +183,23 @@ Resources:
   AWSGoogleCredentialsSecret:
     Type: "AWS::SecretsManager::Secret"
     Properties:
-      Name: SSOSyncGoogleCredentials
+      Name: "SSOSyncGoogleCredentials"
       SecretString: !Ref GoogleCredentials
 
-  AWSGoogleAdminEamil:
+  AWSGoogleAdminEmail:
     Type: "AWS::SecretsManager::Secret"
     Properties:
-      Name: SSOSyncGoogleAdminEmail
+      Name: "SSOSyncGoogleAdminEmail"
       SecretString: !Ref GoogleAdminEmail
 
   AWSSCIMEndpointSecret: # This can be moved to custom provider
     Type: "AWS::SecretsManager::Secret"
     Properties:
-      Name: SSOSyncSCIMEndpointUrl
+      Name: "SSOSyncSCIMEndpointUrl"
       SecretString: !Ref SCIMEndpointUrl
 
   AWSSCIMAccessTokenSecret: # This can be moved to custom provider
     Type: "AWS::SecretsManager::Secret"
     Properties:
-      Name: SSOSyncSCIMAccessToken
+      Name: "SSOSyncSCIMAccessToken"
       SecretString: !Ref SCIMEndpointAccessToken

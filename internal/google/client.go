@@ -1,128 +1,95 @@
-// Copyright (c) 2020, Amazon.com, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// Package google ...
 package google
 
 import (
 	"context"
-
 	"golang.org/x/oauth2/google"
+	"golang.org/x/oauth2/jwt"
 	admin "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/option"
 )
 
-// Client is the Interface for the Client
+// Instance
+
 type Client interface {
-	GetUsers(string) ([]*admin.User, error)
-	GetDeletedUsers() ([]*admin.User, error)
-	GetGroups(string) ([]*admin.Group, error)
-	GetGroupMembers(*admin.Group) ([]*admin.Member, error)
+	Users() UsersService
+	Groups() GroupsService
 }
 
 type client struct {
-	ctx     context.Context
-	service *admin.Service
+	usersService *usersService
+	groupsService *groupsService
 }
 
-// NewClient creates a new client for Google's Admin API
-func NewClient(ctx context.Context, adminEmail string, serviceAccountKey []byte) (Client, error) {
-	config, err := google.JWTConfigFromJSON(serviceAccountKey, admin.AdminDirectoryGroupReadonlyScope,
-		admin.AdminDirectoryGroupMemberReadonlyScope,
-		admin.AdminDirectoryUserReadonlyScope)
+func (r *client) Users() UsersService {
+	return r.usersService
+}
 
-	config.Subject = adminEmail
+func (r *client) Groups() GroupsService {
+	return r.groupsService
+}
 
+// Constructor
+
+func NewClient(ctx context.Context, p ClientParams) (Client, error) {
+	if ctx == nil {
+		ctx = context.TODO()
+	}
+
+	err := p.Validate()
 	if err != nil {
 		return nil, err
 	}
 
-	ts := config.TokenSource(ctx)
+	config, err := parseConfig(p)
+	if err != nil {
+		return nil, err
+	}
 
-	srv, err := admin.NewService(ctx, option.WithTokenSource(ts))
+	options, err := parseOptions(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+
+	service, err := createService(ctx, options)
 	if err != nil {
 		return nil, err
 	}
 
 	return &client{
-		ctx:     ctx,
-		service: srv,
+		usersService: &usersService{
+			ctx: ctx,
+			usersService: service.Users,
+		},
+		groupsService: &groupsService{
+			ctx: ctx,
+			groupsService: service.Groups,
+			membersService: service.Members,
+		},
 	}, nil
 }
 
-// GetDeletedUsers will get the deleted users from the Google's Admin API.
-func (c *client) GetDeletedUsers() ([]*admin.User, error) {
-	u := make([]*admin.User, 0)
-	err := c.service.Users.List().Customer("my_customer").ShowDeleted("true").Pages(c.ctx, func(users *admin.Users) error {
-		u = append(u, users.Users...)
-		return nil
-	})
+func parseConfig(p ClientParams) (*jwt.Config, error) {
+	config, err := google.JWTConfigFromJSON(p.ServiceAccountKey,
+		admin.AdminDirectoryGroupReadonlyScope,
+		admin.AdminDirectoryGroupMemberReadonlyScope,
+		admin.AdminDirectoryUserReadonlyScope)
+	if err != nil {
+		return nil, err
+	}
 
-	return u, err
+	config.Subject = p.AdminEmail
+
+	return config, nil
 }
 
-// GetGroupMembers will get the members of the group specified
-func (c *client) GetGroupMembers(g *admin.Group) ([]*admin.Member, error) {
-	m := make([]*admin.Member, 0)
-	err := c.service.Members.List(g.Id).Pages(context.TODO(), func(members *admin.Members) error {
-		m = append(m, members.Members...)
-		return nil
-	})
+func parseOptions(ctx context.Context, config *jwt.Config) ([]option.ClientOption, error) {
+	options := make([]option.ClientOption, 0)
 
-	return m, err
+	options = append(options, option.WithTokenSource(config.TokenSource(ctx)))
+
+	return options, nil
 }
 
-// GetUsers will get the users from Google's Admin API
-// using the Method: users.list with parameter "query"
-// References:
-// * https://developers.google.com/admin-sdk/directory/reference/rest/v1/users/list
-// * https://developers.google.com/admin-sdk/directory/v1/guides/search-users
-// query possible values:
-//  name:'Jane'
-//  email:admin*
-//  isAdmin=true
-//  manager='janesmith@example.com'
-//  orgName=Engineering orgTitle:Manager
-//  EmploymentData.projects:'GeneGnomes'
-func (c *client) GetUsers(query string) ([]*admin.User, error) {
-	u := make([]*admin.User, 0)
-	err := c.service.Users.List().Query(query).Customer("my_customer").Pages(c.ctx, func(users *admin.Users) error {
-		u = append(u, users.Users...)
-		return nil
-	})
-
-	return u, err
-}
-
-// GetGroups will get the groups from Google's Admin API
-// using the Method: groups.list with parameter "query"
-// References:
-// * https://developers.google.com/admin-sdk/directory/reference/rest/v1/groups/list
-// * https://developers.google.com/admin-sdk/directory/v1/guides/search-groups
-// query possible values:
-//  name='contact'
-//  email:admin*
-//  memberKey=user@company.com
-//  name:contact* email:contact*
-//  name:Admin* email:aws-*
-//  email:aws-*
-func (c *client) GetGroups(query string) ([]*admin.Group, error) {
-	g := make([]*admin.Group, 0)
-	err := c.service.Groups.List().Customer("my_customer").Query(query).Pages(context.TODO(), func(groups *admin.Groups) error {
-		g = append(g, groups.Groups...)
-		return nil
-	})
-
-	return g, err
+func createService(ctx context.Context, options []option.ClientOption) (*admin.Service, error) {
+	return admin.NewService(ctx, options...)
 }

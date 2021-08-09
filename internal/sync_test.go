@@ -17,12 +17,12 @@ package internal
 
 import (
 	"encoding/json"
+	"github.com/awslabs/ssosync/internal/google"
 	"log"
 	"reflect"
 	"testing"
 
 	"github.com/awslabs/ssosync/internal/aws"
-	admin "google.golang.org/api/admin/directory/v1"
 )
 
 // toJSON return a json pretty of the stc
@@ -37,7 +37,7 @@ func toJSON(stc interface{}) []byte {
 func Test_getGroupOperations(t *testing.T) {
 	type args struct {
 		awsGroups    []*aws.Group
-		googleGroups []*admin.Group
+		googleGroups []*google.Group
 	}
 	tests := []struct {
 		name       string
@@ -53,7 +53,7 @@ func Test_getGroupOperations(t *testing.T) {
 					aws.NewGroup("Group-1"),
 					aws.NewGroup("Group-2"),
 				},
-				googleGroups: []*admin.Group{
+				googleGroups: []*google.Group{
 					{Name: "Group-1"},
 					{Name: "Group-2"},
 				},
@@ -69,7 +69,7 @@ func Test_getGroupOperations(t *testing.T) {
 			name: "add two new aws groups",
 			args: args{
 				awsGroups: nil,
-				googleGroups: []*admin.Group{
+				googleGroups: []*google.Group{
 					{Name: "Group-1"},
 					{Name: "Group-2"},
 				},
@@ -103,7 +103,7 @@ func Test_getGroupOperations(t *testing.T) {
 					aws.NewGroup("Group-2"),
 					aws.NewGroup("Group-3"),
 				},
-				googleGroups: []*admin.Group{
+				googleGroups: []*google.Group{
 					{Name: "Group-1"},
 					{Name: "Group-2"},
 				},
@@ -138,7 +138,7 @@ func Test_getGroupOperations(t *testing.T) {
 func Test_getUserOperations(t *testing.T) {
 	type args struct {
 		awsUsers    []*aws.User
-		googleUsers []*admin.User
+		googleUsers []*google.User
 	}
 	tests := []struct {
 		name       string
@@ -155,15 +155,15 @@ func Test_getUserOperations(t *testing.T) {
 					aws.NewUser("name-1", "lastname-1", "user-1@email.com", true),
 					aws.NewUser("name-2", "lastname-2", "user-2@email.com", true),
 				},
-				googleUsers: []*admin.User{
-					{Name: &admin.UserName{
+				googleUsers: []*google.User{
+					{Name: &google.UserName{
 						GivenName:  "name-1",
 						FamilyName: "lastname-1",
 					},
 						Suspended:    false,
 						PrimaryEmail: "user-1@email.com",
 					},
-					{Name: &admin.UserName{
+					{Name: &google.UserName{
 						GivenName:  "name-2",
 						FamilyName: "lastname-2",
 					},
@@ -184,15 +184,15 @@ func Test_getUserOperations(t *testing.T) {
 			name: "add two new aws users",
 			args: args{
 				awsUsers: nil,
-				googleUsers: []*admin.User{
-					{Name: &admin.UserName{
+				googleUsers: []*google.User{
+					{Name: &google.UserName{
 						GivenName:  "name-1",
 						FamilyName: "lastname-1",
 					},
 						Suspended:    false,
 						PrimaryEmail: "user-1@email.com",
 					},
-					{Name: &admin.UserName{
+					{Name: &google.UserName{
 						GivenName:  "name-2",
 						FamilyName: "lastname-2",
 					},
@@ -234,9 +234,9 @@ func Test_getUserOperations(t *testing.T) {
 					aws.NewUser("name-3", "lastname-3", "user-3@email.com", true),
 					aws.NewUser("name-4", "lastname-4", "user-4@email.com", true),
 				},
-				googleUsers: []*admin.User{
+				googleUsers: []*google.User{
 					{
-						Name: &admin.UserName{
+						Name: &google.UserName{
 							GivenName:  "name-1",
 							FamilyName: "lastname-1",
 						},
@@ -244,7 +244,7 @@ func Test_getUserOperations(t *testing.T) {
 						PrimaryEmail: "user-1@email.com",
 					},
 					{
-						Name: &admin.UserName{
+						Name: &google.UserName{
 							GivenName:  "name-2",
 							FamilyName: "lastname-2",
 						},
@@ -252,7 +252,7 @@ func Test_getUserOperations(t *testing.T) {
 						PrimaryEmail: "user-2@email.com",
 					},
 					{
-						Name: &admin.UserName{
+						Name: &google.UserName{
 							GivenName:  "name-4",
 							FamilyName: "lastname-4",
 						},
@@ -296,7 +296,7 @@ func Test_getUserOperations(t *testing.T) {
 
 func Test_getGroupUsersOperations(t *testing.T) {
 	type args struct {
-		gGroupsUsers   map[string][]*admin.User
+		gGroupsUsers   map[string][]*google.User
 		awsGroupsUsers map[string][]*aws.User
 	}
 	tests := []struct {
@@ -308,10 +308,10 @@ func Test_getGroupUsersOperations(t *testing.T) {
 		{
 			name: "one add, one delete, one equal",
 			args: args{
-				gGroupsUsers: map[string][]*admin.User{
+				gGroupsUsers: map[string][]*google.User{
 					"group-1": {
 						{
-							Name: &admin.UserName{
+							Name: &google.UserName{
 								GivenName:  "name-1",
 								FamilyName: "lastname-1",
 							},

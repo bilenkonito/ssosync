@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -112,7 +113,10 @@ func (c *client) sendRequestWithBody(method string, url string, body interface{}
 	if err != nil {
 		return
 	}
-	defer resp.Body.Close()
+
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
 
 	// Read the body back from the response
 	response, err = ioutil.ReadAll(resp.Body)
@@ -143,7 +147,10 @@ func (c *client) sendRequest(method string, url string) (response []byte, err er
 		return
 	}
 
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
+
 	response, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return
@@ -525,7 +532,6 @@ func (c *client) GetGroupMembers(g *Group) ([]*User, error) {
 	var users = make([]*User, 0)
 	for _, res := range r.Resources {
 		for _, uID := range res.Members { // NOTE: Not Implemented Yet https://docs.aws.amazon.com/singlesignon/latest/developerguide/listgroups.html
-
 			user, err := c.FindUserByID(uID)
 			if err != nil {
 				return nil, err

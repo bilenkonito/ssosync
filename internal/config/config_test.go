@@ -9,14 +9,15 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	assert := assert.New(t)
+	a := assert.New(t)
 
 	cfg := New()
 
-	assert.NotNil(cfg)
+	a.NotNil(cfg)
 
-	assert.Equal(cfg.LogLevel, DefaultLogLevel)
-	assert.Equal(cfg.LogFormat, DefaultLogFormat)
-	assert.Equal(cfg.Debug, DefaultDebug)
-	assert.Equal(cfg.GoogleCredentials, DefaultGoogleCredentials)
+	a.Equal(cfg.LogLevel, DefaultLogLevel)
+	a.Equal(cfg.LogFormat, DefaultLogFormat)
+	a.Equal(cfg.Debug, DefaultDebug)
+	a.Equal(cfg.GoogleCredentials, DefaultGoogleCredentials)
+	a.Equal(cfg.GoogleCustomer, DefaultGoogleCustomer)
 }
