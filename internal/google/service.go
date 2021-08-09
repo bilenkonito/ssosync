@@ -36,7 +36,7 @@ func (r *usersService) Query(p QueryParams) ([]*User, error) {
 	}
 
 	c := r.usersService.List().ShowDeleted(strconv.FormatBool(p.ShowDeleted))
-	if p.Customer != "" {
+	if p.Domain == "" && p.Customer != "" {
 		c = c.Customer(p.Customer)
 	}
 	if p.Domain != "" {
@@ -47,7 +47,7 @@ func (r *usersService) Query(p QueryParams) ([]*User, error) {
 	}
 
 	ret := make([]*User, 0)
-	err = c.Query(p.Query).Pages(r.ctx, func(users *admin.Users) error {
+	err = c.Pages(r.ctx, func(users *admin.Users) error {
 		for _, user := range users.Users {
 			ret = append(ret, user)
 		}
@@ -100,7 +100,7 @@ func (r *groupsService) Query(p QueryParams) ([]*Group, error) {
 	}
 
 	c := r.groupsService.List()
-	if p.Customer != "" {
+	if p.Domain == "" && p.Customer != "" {
 		c = c.Customer(p.Customer)
 	}
 	if p.Domain != "" {
@@ -111,7 +111,7 @@ func (r *groupsService) Query(p QueryParams) ([]*Group, error) {
 	}
 
 	ret := make([]*Group, 0)
-	err = c.Query(p.Query).Pages(r.ctx, func(groups *admin.Groups) error {
+	err = c.Pages(r.ctx, func(groups *admin.Groups) error {
 		for _, group := range groups.Groups {
 			ret = append(ret, group)
 		}

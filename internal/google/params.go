@@ -38,16 +38,7 @@ type QueryParams struct {
 	ShowDeleted bool
 }
 func (r *QueryParams) Validate() error {
-	err := r.Validate()
-	if err != nil {
-		return err
-	}
-
-	if r.Query == "" {
-		return errors.New("google.client: empty Query provided")
-	}
-
-	return nil
+	return r.AccountParams.Validate()
 }
 
 type GroupMembersParams struct {
@@ -55,7 +46,7 @@ type GroupMembersParams struct {
 	Parent *Group
 }
 func (r *GroupMembersParams) Validate() error {
-	err := r.Validate()
+	err := r.GetParams.Validate()
 	if err != nil && r.Parent == nil {
 		return errors.New("google.client: empty Parent and Id provided")
 	}

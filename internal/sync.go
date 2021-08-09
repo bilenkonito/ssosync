@@ -276,6 +276,15 @@ func (s *syncGSuite) SyncGroupsUsers(p google.QueryParams) error {
 		return err
 	}
 
+	googleGroupsFiltered := make([]*google.Group, 0)
+	for _, group := range googleGroups {
+		if s.ignoreGroup(group.Email) {
+			continue
+		}
+		googleGroupsFiltered = append(googleGroupsFiltered, group)
+	}
+	googleGroups = googleGroupsFiltered
+
 	log.Debug("get google users and groups and its users")
 	googleUsers, googleGroupsUsers, err := s.getGoogleGroupsAndUsers(googleGroups)
 	if err != nil {
@@ -450,7 +459,7 @@ func (s *syncGSuite) getGoogleGroupsAndUsers(googleGroups []*google.Group) ([]*g
 	gUniqUsers := make(map[string]*google.User)
 
 	for _, g := range googleGroups {
-		if s.ignoreGroup(g.Name) {
+		if s.ignoreGroup(g.Email) {
 			continue
 		}
 
@@ -705,9 +714,9 @@ func DoSync(ctx context.Context, cfg *config.Config) error {
 	return nil
 }
 
-func (s *syncGSuite) ignoreUser(name string) bool {
+func (s *syncGSuite) ignoreUser(email string) bool {
 	for _, u := range s.cfg.IgnoreUsers {
-		if u == name {
+		if u == email {
 			return true
 		}
 	}
@@ -715,9 +724,9 @@ func (s *syncGSuite) ignoreUser(name string) bool {
 	return false
 }
 
-func (s *syncGSuite) ignoreGroup(name string) bool {
+func (s *syncGSuite) ignoreGroup(email string) bool {
 	for _, g := range s.cfg.IgnoreGroups {
-		if g == name {
+		if g == email {
 			return true
 		}
 	}
@@ -725,9 +734,9 @@ func (s *syncGSuite) ignoreGroup(name string) bool {
 	return false
 }
 
-func (s *syncGSuite) includeGroup(name string) bool {
+func (s *syncGSuite) includeGroup(email string) bool {
 	for _, g := range s.cfg.IncludeGroups {
-		if g == name {
+		if g == email {
 			return true
 		}
 	}
